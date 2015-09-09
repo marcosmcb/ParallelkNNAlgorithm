@@ -1,10 +1,11 @@
+// Codigo serial para o problema do KNN
 // Vizinho mais próximo
 
 #include <stdio.h>
 #include <math.h>       /* distancia euclidiana */
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
-
+#include "timer.h"
 
 #define MIN_PONTOS  5
 #define MAX_VALUE   1000
@@ -74,6 +75,11 @@ int main(){
 	int l, m, n;
     int melhorCluster = 0;
 
+    double start, finish;
+
+    //Registra o tempo ao iniciar o calculo
+    GET_TIME(start);
+
     // Calcula distancia de cada ponto em relacao a todos os demais
     for (i = 0; i < nPontos; i++){
         for (j = i; j < nPontos; j++){
@@ -139,6 +145,8 @@ int main(){
             melhorCluster = i;
         }
     }
+    //Registra o tempo ao finalizar o calculo
+    GET_TIME(finish);
 
     // Imprime distancias
     if (DEBUG) {
@@ -170,6 +178,8 @@ int main(){
     for (k = 0; k < kClusters; k++){
         printf("(%.0f,%.0f)\n",p[clusters[melhorCluster][k]].x,p[clusters[melhorCluster][k]].y);
     }
+
+    printf("\nO tempo para calcular o melhor cluster, foi %e segundos\n", finish - start);
 
 	free(p);
 	free(distancias);

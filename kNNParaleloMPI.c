@@ -9,7 +9,7 @@
 //      Compilação e Execução do programa:
 //
 //          compilar: make
-//          executar: ./kNNParaleloOpenMP
+//          executar: ./kNNParaleloMPI
 //
 //      Remover executáveis:
 //          remover: make clean
@@ -22,7 +22,6 @@
 //          N - Número de Pontos gerados aleatoriamente [valor inteiro];
 //          K - Número de Vizinhos [valor inteiro];
 //-----------------------------------------------------------------------------
-#include <omp.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -184,23 +183,14 @@ int main() {
             distances[i][j] = 0;
         }
     }
-    /* Inicia a contagem do tempo para avaliacao posterior */
-    GET_TIME(start);
-    // Computação paralela dos clusters, bem como suas médias
-    /* Setando a criação de threads de maneira dinâmicas para 0, Nós evitamos que o OpenMP decida sozinho a quantidade de threads*/
-    omp_set_dynamic(0);
-    /* A quantidade de threads informada pelo usuário será utilizada na verdade */
-    omp_set_num_threads(numThread);
-
-    #pragma omp parallel
-    {
-        #pragma omp for
-            for(i = 0; i < n; i++) {
-                build_clusters(&points, &clusters, &distances, i, n, k);
-                calc_avg(&avgs, &distances, i, k);
-            }
+   
+    for(i = 0; i < n; i++) {
+        build_clusters(&points, &clusters, &distances, i, n, k);
+        calc_avg(&avgs, &distances, i, k);
     }
 
+    
+    
     /*Contagem do tempo é terminada aqui*/
     GET_TIME(finish);
     

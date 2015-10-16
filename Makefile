@@ -1,6 +1,6 @@
 principal:
-	gcc kNNParaleloOpenMP.c -o kNNParaleloOpenMP -fopenmp
+	gcc kNNParaleloMPI.c -o kNNParaleloMPI -fopenmp
 	rm -f kNNParaleloOpenMP.c~
 
 clean:
-	rm -f kNNParaleloOpenMP
+	rm -f kNNParaleloMPI

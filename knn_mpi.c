@@ -38,6 +38,11 @@ typedef struct _point {
     float y;
 } Point;
 
+typedef struct _cluster {
+  float mean;
+  Point *points;
+} Cluster;
+
 /**
  * verify_is_in_cluster()
  * Função para verificar se um ponto pertence ao cluster.
@@ -145,6 +150,7 @@ int main() {
     int k;  // variavel para o tamanho dos clusters (k vizinhos).
     int i;  // variavel auxiliar para indices
     int j;  // variavel auxiliar para indices
+
     int my_rank; // variavel para o rank do processo
     int comm_sz; // variavel para o numero de processos
     int clusters_per_proc; // variavel para o numero de clusters por processo
@@ -202,10 +208,6 @@ int main() {
     else
       exit(1); // tem que ser divisivel
 
-    // Envia o valor de n e k para todos os processos
-    MPI_Bcast(&n, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-    MPI_Bcast(&k, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-
     srand(time(NULL));
 
     // Alocação do vetor de pontos e geração dos mesmos.
@@ -227,50 +229,50 @@ int main() {
     for (i = 0; i < clusters_per_proc; i++)
       sub_distances[i] = (float*) malloc (sizeof(float) * (k + 1));
 
-    MPI_Scatter(clusters, clusters_per_proc * (k+1), mpi_points_type, sub_clusters,
-                clusters_per_proc * (k+1), mpi_points_type, MASTER, MPI_COMM_WORLD);
-    MPI_Scatter(avgs, clusters_per_proc, MPI_FLOAT, sub_avgs,
-                clusters_per_proc, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
-    MPI_Scatter(distances, clusters_per_proc * (k+1), MPI_FLOAT, sub_distances,
-                clusters_per_proc * (k+1), MPI_FLOAT, MASTER, MPI_COMM_WORLD);
+    // Envia o valor de n e k para todos os processos
+    MPI_Bcast(&n, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    MPI_Bcast(&k, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+    MPI_Bcast(points, n, mpi_points_type, MASTER, MPI_COMM_WORLD);
 
-    for(i = 0; i < clusters_per_proc; i++) {
-        build_clusters(&points, &sub_clusters, &sub_distances, i, n, k);
-        calc_avg(&sub_avgs, &sub_distances, i, k);
-    }
-    //best_sub_avg = best_avg(sub_avgs, clusters_per_proc);
-
-    MPI_Gather(sub_avgs, clusters_per_proc, MPI_FLOAT, avgs, clusters_per_proc, MPI_FLOAT, MASTER, MPI_COMM_WORLD);
-    MPI_Gather(sub_clusters, clusters_per_proc * (k+1), mpi_points_type, clusters,
-              clusters_per_proc * (k+1), mpi_points_type, MASTER, MPI_COMM_WORLD);
-    if (my_rank == MASTER) printf("OI\n");
-
-    // Busca o cluster com a melhor distancia média.
-    if (my_rank == MASTER) {
-      printf("OI\n" );
-      i = best_avg(avgs, n);
-
-      printf("The best cluster has an average distance of: %f\n", avgs[i]);
-      printf("The cluster has the points:\n\n");
-      for(j = 0; j < k+1; j++) {
-          printf("%f, %f\n", clusters[i][j].x, clusters[i][j].y);
+    if(my_rank != 0) {
+      for(i = 0; i < clusters_per_proc; i++) {
+          build_clusters(&points, &sub_clusters, &sub_distances, i, n, k);
+          calc_avg(&sub_avgs, &sub_distances, i, k);
       }
+    }
 
+    if(my_rank != 0) {
+      printf("p %d\n", my_rank);
+      printf("ponto cluster 1: %f, %f\n", sub_clusters[1][1].x, sub_clusters[1][1].y);
+      // printf("ponto 2: %f, %f\n", points[5].x, points[5].y);
       printf("\n");
     }
 
-    // Desaloca a memória
-    // for(i = 0; i < n; i++) {
-    //     free(distances[i]);
-    //     free(clusters[i]);
+    // if (my_rank == MASTER) printf("OI\n");
+    //
+    // // Busca o cluster com a melhor distancia média.
+    // if (my_rank == MASTER) {
+    //   i = best_avg(avgs, n);
+    //
+    //   printf("The best cluster has an average distance of: %f\n", avgs[i]);
+    //   printf("The cluster has the points:\n\n");
+    //   for(j = 0; j < k+1; j++) {
+    //       printf("%f, %f\n", clusters[i][j].x, clusters[i][j].y);
+    //   }
+    //
+    //   printf("\n");
     // }
     //
-    // free(distances);
-    // free(clusters);
-    // free(points);
-    // free(avgs);
-
-    printf("\nrank: %d, did it\n", my_rank);
+    // // Desaloca a memória
+    // // for(i = 0; i < n; i++) {
+    // //     free(distances[i]);
+    // //     free(clusters[i]);
+    // // }
+    // //
+    // // free(distances);
+    // // free(clusters);
+    // // free(points);
+    // // free(avgs);
     MPI_Finalize();
     return 0;
 }
